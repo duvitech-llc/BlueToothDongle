@@ -212,14 +212,10 @@ public class BluetoothScannerService extends Service {
                 }
                 break;
             case SCANNING_LEGACY:
-                if(mBluetoothAdapter.isDiscovering()) {
-                    stopBluetoothDiscovery();
-                }
+                stopBluetoothDiscovery();
                 break;
             case SCANNING_LE:
-                if(mBluetoothAdapter.isDiscovering()) {
-                    stopBluetoothLeScanner();
-                }
+                stopBluetoothLeScanner();
                 break;
             default:
                 break;
