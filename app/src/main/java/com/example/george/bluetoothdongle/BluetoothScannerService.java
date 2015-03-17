@@ -148,7 +148,7 @@ public class BluetoothScannerService extends Service {
             timer.scheduleAtFixedRate(timerTask, 0, INTERVAL_SECONDS * 1000);
         }
         mScannerState = BL_SCANNER_STATE.SLEEPING;
-        startBluetoothDiscovery();
+        changeScannerState();
 
         return START_NOT_STICKY;
     }
@@ -158,8 +158,7 @@ public class BluetoothScannerService extends Service {
         super.onDestroy();
         Log.d(TAG, "onDestroy()");
 
-        if(mDiscoveryInProgress)
-            stopBluetoothDiscovery();
+        cancelScannerState();
 
         if (timer != null) {
             Log.d(TAG, "purging timer");
@@ -178,16 +177,15 @@ public class BluetoothScannerService extends Service {
             timer.scheduleAtFixedRate(timerTask, 0, INTERVAL_SECONDS * 1000);
         }
 
-        if(!mDiscoveryInProgress) {
-            startBluetoothDiscovery();
-        }
+        mScannerState = BL_SCANNER_STATE.SLEEPING;
+        changeScannerState();
+
 
     }
 
     public void cancelScanner() {
         Log.d(TAG, "cancelScanner()");
-        if(mDiscoveryInProgress)
-            stopBluetoothDiscovery();
+        cancelScannerState();
         mRun = false;
         timerTask.cancel();
         timer.cancel();
@@ -199,12 +197,38 @@ public class BluetoothScannerService extends Service {
         Log.d(TAG, "changeScannerState");
         switch (mScannerState){
             case SLEEPING:
+                if(mBluetoothAdapter.isDiscovering()) {
+                    if (mLastScanState == BL_SCANNER_STATE.SCANNING_LE || mLastScanState == BL_SCANNER_STATE.SLEEPING) {
+                        stopBluetoothDiscovery();
+                    }else{
+                        stopBluetoothLeScanner();
+                    }
+                }
+
                 if(mLastScanState == BL_SCANNER_STATE.SCANNING_LE || mLastScanState == BL_SCANNER_STATE.SLEEPING){
                     startBluetoothDiscovery();
                 }else {
                     startBluetoothLeScanner();
                 }
                 break;
+            case SCANNING_LEGACY:
+                if(mBluetoothAdapter.isDiscovering()) {
+                    stopBluetoothDiscovery();
+                }
+                break;
+            case SCANNING_LE:
+                if(mBluetoothAdapter.isDiscovering()) {
+                    stopBluetoothLeScanner();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void cancelScannerState(){
+        Log.d(TAG, "changeScannerState");
+        switch (mScannerState){
             case SCANNING_LEGACY:
                 stopBluetoothDiscovery();
                 break;
