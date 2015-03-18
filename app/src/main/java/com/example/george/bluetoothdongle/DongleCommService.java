@@ -34,7 +34,7 @@ public class DongleCommService {
 
     // UUIDs
     private static final UUID DONGLE_UUID_SECURE =
-            UUID.fromString("");
+            UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     private static final UUID DONGLE_UUID_INSECURE =
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -49,6 +49,7 @@ public class DongleCommService {
     private int mState;
 
     public DongleCommService(Context context, Handler handler)  {
+        Log.d(TAG, "DongleCommService");
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
         mHandler = handler;

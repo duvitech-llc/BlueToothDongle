@@ -9,7 +9,7 @@ import android.widget.Toast;
 public class ScannerListenerReceiver extends BroadcastReceiver {
     private static final String TAG = "DongleListenerReceiver";
 
-    IScannedDevices mHandle = null;
+    static IScannedDevices mHandle;
 
     public ScannerListenerReceiver() {
         mHandle = null;
@@ -22,6 +22,7 @@ public class ScannerListenerReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "Broadcast Received");
+
         // an Intent broadcast.
         String action = intent.getAction();
         if(action.equals(BluetoothScannerService.DONGLE_DETECTED)) {
@@ -29,11 +30,15 @@ public class ScannerListenerReceiver extends BroadcastReceiver {
             Toast.makeText(context, "Dongle Detected.", Toast.LENGTH_LONG).show();
             if(mHandle != null)
                 mHandle.onDongleDetected(sBluetoothAddress);
+            else
+                Log.d(TAG, "Handle is null");
         }else if(action.equals(BluetoothScannerService.CABTAG_DETECTED)){
             String sBluetoothAddress = intent.getExtras().getString("BT_ADDRESS");
             Toast.makeText(context, "CabTag Detected.", Toast.LENGTH_LONG).show();
             if(mHandle != null)
                 mHandle.onCabTagDetected(sBluetoothAddress);
+            else
+                Log.d(TAG, "Handle is null");
         }
     }
 }

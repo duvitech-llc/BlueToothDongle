@@ -187,10 +187,14 @@ public class BluetoothScannerService extends Service {
         Log.d(TAG, "cancelScanner()");
         cancelScannerState();
         mRun = false;
-        timerTask.cancel();
-        timer.cancel();
-        timer.purge();
-        timer = null;
+        if(timerTask != null)
+            timerTask.cancel();
+
+        if(timer != null) {
+            timer.cancel();
+            timer.purge();
+            timer = null;
+        }
     }
 
     public void changeScannerState(){

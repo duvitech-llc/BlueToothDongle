@@ -2,4 +2,8 @@
     <string name="app_name">BlueToothDongle</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="not_connected">Dongle Not Connected</string>
+    <string name="title_connected_to">Dongle Connected To</string>
+    <string name="title_connecting">Connecting...</string>
+    <string name="title_not_connected">Not Connected</string>
 </resources>
