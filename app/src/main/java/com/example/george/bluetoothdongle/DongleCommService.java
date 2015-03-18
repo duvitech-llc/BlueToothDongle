@@ -309,7 +309,7 @@ public class DongleCommService {
                     // successful connection or an exception
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
-                    Log.e(TAG, "Socket Type: " + mSocketType + "accept() failed", e);
+                    Log.w(TAG, "Socket Type: " + mSocketType + "accept() failed", e);
                     break;
                 }
 
