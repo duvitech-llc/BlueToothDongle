@@ -7,7 +7,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,17 +15,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
-
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends ActionBarActivity implements IScannedDevices {
 
     private static final String TAG = "MainActivity";
     private BluetoothScannerService mService;
-    private DongleListenerReceiver rec;
+    private ScannerListenerReceiver rec;
     private boolean mBound;
 
 
@@ -41,7 +36,7 @@ public class MainActivity extends ActionBarActivity {
                     .commit();
         }
 
-        rec = new DongleListenerReceiver();
+        rec = new ScannerListenerReceiver();
 
         registerReceiver(rec, new IntentFilter(BluetoothScannerService.DONGLE_DETECTED));
         registerReceiver(rec, new IntentFilter(BluetoothScannerService.CABTAG_DETECTED));
@@ -107,6 +102,16 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onDongleDetected(String address) {
+
+    }
+
+    @Override
+    public void onCabTagDetected(String address) {
+
     }
 
     /**

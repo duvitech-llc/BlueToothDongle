@@ -25,13 +25,21 @@
             android:enabled="true"
             android:exported="false" >
         </service>
-
         <service
             android:name=".BluetoothScannerService"
             android:enabled="true"
             android:exported="false" >
         </service>
-
+        <service
+            android:name=".DongleCommService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
+        <service
+            android:name=".CabTagCommService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
     </application>
 
 </manifest>

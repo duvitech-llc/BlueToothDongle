@@ -9,12 +9,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.v4.app.NotificationCompatSideChannelService;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -30,7 +26,7 @@ public class BluetoothScannerService extends Service {
         SLEEPING ,
         SCANNING_LEGACY,
         SCANNING_LE
-    };
+    }
 
     private static final String TAG = "BluetoothScannerService";
     private static final int INTERVAL_SECONDS = 20;
@@ -67,7 +63,7 @@ public class BluetoothScannerService extends Service {
                 {
                     stopBluetoothDiscovery();
                     Log.d(TAG, "Found ODBII dongle ID: " + device.getAddress());
-                    broadCastDeviceDetectedIntent(BluetoothScannerService.DONGLE_DETECTED);
+                    broadCastDeviceDetectedIntent(BluetoothScannerService.DONGLE_DETECTED, device.getAddress());
                 }
             }
         }
@@ -85,7 +81,7 @@ public class BluetoothScannerService extends Service {
         public void onLeScan(BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
             Log.d("LeScanCallback", bluetoothDevice.getAddress());
 
-            broadCastDeviceDetectedIntent(BluetoothScannerService.CABTAG_DETECTED);
+            broadCastDeviceDetectedIntent(BluetoothScannerService.CABTAG_DETECTED, bluetoothDevice.getAddress());
             stopBluetoothLeScanner();
         }
     };
@@ -117,9 +113,10 @@ public class BluetoothScannerService extends Service {
         mLastScanState = BL_SCANNER_STATE.SCANNING_LEGACY;
     }
 
-    private void broadCastDeviceDetectedIntent(String action){
+    private void broadCastDeviceDetectedIntent(String action, String address){
         Log.d(TAG, "Sending broadcast...");
         Intent intent = new Intent(action);
+        intent.putExtra("BT_ADDRESS", address);
         sendBroadcast(intent);
     }
 

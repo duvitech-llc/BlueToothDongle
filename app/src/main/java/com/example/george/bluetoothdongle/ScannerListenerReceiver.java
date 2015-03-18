@@ -6,10 +6,17 @@ import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
 
-public class DongleListenerReceiver extends BroadcastReceiver {
+public class ScannerListenerReceiver extends BroadcastReceiver {
     private static final String TAG = "DongleListenerReceiver";
 
-    public DongleListenerReceiver() {
+    IScannedDevices mHandle = null;
+
+    public ScannerListenerReceiver() {
+        mHandle = null;
+    }
+
+    public ScannerListenerReceiver(IScannedDevices handle){
+        mHandle = handle;
     }
 
     @Override
@@ -18,9 +25,15 @@ public class DongleListenerReceiver extends BroadcastReceiver {
         // an Intent broadcast.
         String action = intent.getAction();
         if(action.equals(BluetoothScannerService.DONGLE_DETECTED)) {
+            String sBluetoothAddress = intent.getExtras().getString("BT_ADDRESS");
             Toast.makeText(context, "Dongle Detected.", Toast.LENGTH_LONG).show();
+            if(mHandle != null)
+                mHandle.onDongleDetected(sBluetoothAddress);
         }else if(action.equals(BluetoothScannerService.CABTAG_DETECTED)){
+            String sBluetoothAddress = intent.getExtras().getString("BT_ADDRESS");
             Toast.makeText(context, "CabTag Detected.", Toast.LENGTH_LONG).show();
+            if(mHandle != null)
+                mHandle.onCabTagDetected(sBluetoothAddress);
         }
     }
 }
