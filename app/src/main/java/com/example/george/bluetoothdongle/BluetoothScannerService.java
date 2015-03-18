@@ -58,8 +58,9 @@ public class BluetoothScannerService extends Service {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // Add the name and address to an array adapter to show in a ListView
+                String name = device.getName();
 
-                if(device.getName().compareTo("OBDII") == 0 )
+                if(name != null && name.compareTo("OBDII") == 0 )
                 {
                     stopBluetoothDiscovery();
                     Log.d(TAG, "Found ODBII dongle ID: " + device.getAddress());
@@ -143,9 +144,11 @@ public class BluetoothScannerService extends Service {
             timerTask = new DiscoveryTimer();
             timer = new Timer(true);
             timer.scheduleAtFixedRate(timerTask, 0, INTERVAL_SECONDS * 1000);
+
+            mScannerState = BL_SCANNER_STATE.SLEEPING;
+            changeScannerState();
+
         }
-        mScannerState = BL_SCANNER_STATE.SLEEPING;
-        changeScannerState();
 
         return START_NOT_STICKY;
     }

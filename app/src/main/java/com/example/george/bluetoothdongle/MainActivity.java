@@ -1,11 +1,14 @@
 package com.example.george.bluetoothdongle;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -15,6 +18,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
+import java.util.logging.LogRecord;
 
 
 public class MainActivity extends ActionBarActivity implements IScannedDevices {
@@ -24,6 +30,41 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
     private ScannerListenerReceiver rec;
     private boolean mBound;
 
+    // Intent request codes
+    private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
+    private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
+    private static final int REQUEST_ENABLE_BT = 3;
+
+
+    /**
+     * Name of the connected dongle
+     */
+    private String mConnectedDongleName = null;
+
+    /**
+     * String buffer for outgoing messages
+     */
+    private StringBuffer mOutStringBuffer;
+
+    /**
+     * Local Bluetooth adapter
+     */
+    private BluetoothAdapter mBluetoothAdapter = null;
+
+    /**
+     * Member object for the Dongle Communication service
+     */
+    private DongleCommService mDongleService = null;
+    private CabTagCommService mCabTagService = null;
+
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's current application state
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,11 +77,16 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
                     .commit();
         }
 
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if(mBluetoothAdapter == null){
+            // device does not have a bluetooth radio
+
+            Toast.makeText(getApplicationContext(), "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            finish();
+        }
+
+        // start listener
         rec = new ScannerListenerReceiver();
-
-        registerReceiver(rec, new IntentFilter(BluetoothScannerService.DONGLE_DETECTED));
-        registerReceiver(rec, new IntentFilter(BluetoothScannerService.CABTAG_DETECTED));
-
     }
 
     @Override
@@ -106,11 +152,37 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
 
     @Override
     public void onDongleDetected(String address) {
+        // Dongle in range
+        if(mDongleService == null){
+            // connect to the dongle
+            setupDongleChannel();
+        }
 
     }
 
     @Override
     public void onCabTagDetected(String address) {
+        // cabtag in range
+        if(mCabTagService == null){
+            // connect to the CabTag???
+            setupCabTagChannel();
+        }
+    }
+
+    private void setupDongleChannel(){
+        // initialize the DongleCommService to perform a bluetooth connection
+        mDongleService = new DongleCommService(this, mHandler);
+
+        // Initialize the buffer for outgoing messages
+        mOutStringBuffer = new StringBuffer("");
+    }
+
+
+    private void setupCabTagChannel(){
+
+    }
+
+    private void sendCommand(String dongleCommand){
 
     }
 
@@ -148,4 +220,13 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
             mBound = false;
         }
     };
+
+    private final Handler mHandler = new Handler(){
+
+        @Override
+        public void handleMessage(Message msg) {
+
+        }
+    };
+
 }
