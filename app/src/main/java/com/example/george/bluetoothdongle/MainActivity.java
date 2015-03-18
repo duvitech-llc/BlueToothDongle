@@ -185,11 +185,6 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
             Log.d(TAG,"Fragment is NULL");
     }
 
-
-
-
-
-
     /**
      * A placeholder fragment containing a simple view.
      */
