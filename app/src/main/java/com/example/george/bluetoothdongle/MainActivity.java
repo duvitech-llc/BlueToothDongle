@@ -93,7 +93,10 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
         Log.d(TAG, "onPause()");
         mService.cancelScanner();
         if(mConnection != null){
-            unbindService(mConnection);
+            boolean isBound = false;
+            isBound = bindService( new Intent(getApplicationContext(), BluetoothScannerService.class), mConnection, Context.BIND_AUTO_CREATE );
+            if(isBound)
+                unbindService(mConnection);
         }
 
         if(rec != null)
