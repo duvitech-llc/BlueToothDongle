@@ -19,19 +19,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".DongleListenerService"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
         <service
             android:name=".BluetoothScannerService"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
-        <service
-            android:name=".DongleCommService"
             android:enabled="true"
             android:exported="false" >
         </service>
