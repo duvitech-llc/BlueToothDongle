@@ -41,6 +41,8 @@ public class BluetoothScannerService extends Service {
 
     private static boolean mDiscoverReceiverEnabled = false;
     private boolean mRun = false;
+    private boolean mDisableDongleScan = false;
+    private boolean mDisableCabTagScan = false;
     private boolean mDiscoveryInProgress = false;
 
     public BluetoothScannerService() {
@@ -171,6 +173,8 @@ public class BluetoothScannerService extends Service {
     public void startScanner() {
         Log.d(TAG, "startScanner()");
         if (!mRun) {
+            mDisableDongleScan = false;
+            mDisableCabTagScan = false;
             mRun = true;
             timerTask = new DiscoveryTimer();
             timer = new Timer(true);
@@ -197,6 +201,30 @@ public class BluetoothScannerService extends Service {
         }
     }
 
+    public boolean  isDongleDiscoveryDisabled(){
+        return mDisableDongleScan;
+    }
+
+    public void enableDongleDiscovery(){
+        mDisableDongleScan = false;
+    }
+
+    public void disableDongleDiscovery(){
+        mDisableDongleScan = true;
+    }
+
+    public boolean  isCabTagDiscoveryDisabled(){
+        return mDisableCabTagScan;
+    }
+
+    public void enableCabTagDiscovery(){
+        mDisableCabTagScan = false;
+    }
+
+    public void disableCabTagDiscovery(){
+        mDisableCabTagScan = true;
+    }
+
     public void changeScannerState(){
         Log.d(TAG, "changeScannerState");
         switch (mScannerState){
@@ -209,11 +237,21 @@ public class BluetoothScannerService extends Service {
                     }
                 }
 
-                if(mLastScanState == BL_SCANNER_STATE.SCANNING_LE || mLastScanState == BL_SCANNER_STATE.SLEEPING){
-                    startBluetoothDiscovery();
-                }else {
-                    startBluetoothLeScanner();
+                if((mLastScanState == BL_SCANNER_STATE.SCANNING_LE || mLastScanState == BL_SCANNER_STATE.SLEEPING) && !mDisableDongleScan){
+                    if(!mDisableDongleScan)
+                        startBluetoothDiscovery();
+                    else
+                        Log.d(TAG, "dongleDiscovery is Disabled");
+
+                }else if(!mDisableCabTagScan) {
+                    if(!mDisableCabTagScan)
+                        startBluetoothLeScanner();
+                    else
+                        Log.d(TAG, "cabTagDiscovery is Disabled");
                 }
+                else
+                    Log.d(TAG, "both scans are Disabled");
+
                 break;
             case SCANNING_LEGACY:
                 stopBluetoothDiscovery();

@@ -21,6 +21,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.logging.LogRecord;
@@ -146,8 +147,9 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
 
     @Override
     public void onDongleDetected(String address) {
-        Log.d(TAG,"onDongleDetected");
-        mService.cancelScanner();
+        Log.d(TAG, "onDongleDetected");
+        mService.disableDongleDiscovery();
+
         // Dongle in range
         PlaceholderFragment fragment = (PlaceholderFragment)getSupportFragmentManager().findFragmentById(R.id.container);
         if(fragment != null) {
@@ -165,6 +167,7 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
     @Override
     public void onCabTagDetected(String address) {
         Log.d(TAG,"onCabTagDetected");
+        mService.disableCabTagDiscovery();
        // mService.cancelScanner();
         // cabtag in range
         PlaceholderFragment fragment = (PlaceholderFragment)getSupportFragmentManager().findFragmentById(R.id.container);
@@ -205,6 +208,7 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
         private DongleCommService mDongleService = null;
         private CabTagCommService mCabTagService = null;
 
+        private TextView tvStatus;
 
         public PlaceholderFragment() {
         }
@@ -245,6 +249,7 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            tvStatus = (TextView)rootView.findViewById(R.id.tv_status);
             return rootView;
         }
 
@@ -260,12 +265,22 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
         }
 
         @Override
-        public void onDestroy() {
-            super.onDestroy();
-            Log.d(FTAG, "onDestroy()");
+        public void onPause() {
+            super.onPause();
+        }
+
+        @Override
+        public void onStop() {
+            super.onStop();
             if (mDongleService != null) {
                 mDongleService.stop();
             }
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            Log.d(FTAG, "onDestroy()");
         }
 
         private void sendCommand(String dongleCommand){
@@ -297,6 +312,8 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
          */
         private void setStatus(CharSequence subTitle) {
             FragmentActivity activity = getActivity();
+            if(tvStatus != null)
+                tvStatus.setText(subTitle);
             if (null == activity) {
                 return;
             }
@@ -314,6 +331,8 @@ public class MainActivity extends ActionBarActivity implements IScannedDevices {
          */
         private void setStatus(int resId) {
             FragmentActivity activity = getActivity();
+            if(tvStatus != null)
+                tvStatus.setText(getResources().getText(resId));
             if (null == activity) {
                 return;
             }
