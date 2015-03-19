@@ -179,6 +179,29 @@ public class DataUpdateService extends Service implements LocationListener,IScan
         return false;
     }
 
+    public int getDongleStatus(){
+        if(mDongleService != null)
+            return mDongleService.getState();
+
+        return 0;
+    }
+
+
+    public String getCabTagId(){
+        if(mCabTagAddress != null)
+            return mCabTagAddress;
+
+        return "No CabTag Found";
+    }
+
+    public String getDongleId(){
+        if(mDongleAddress != null)
+            return mDongleAddress;
+
+        return "No Dongle Found";
+    }
+
+
     private void setupDongleChannel(BluetoothDevice device){
         Log.d(TAG, "setupDongleChannel");
         if(mDongleService != null){
