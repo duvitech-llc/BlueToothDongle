@@ -41,8 +41,8 @@ public class BluetoothScannerService extends Service {
 
     private static boolean mDiscoverReceiverEnabled = false;
     private boolean mRun = false;
-    private boolean mDisableDongleScan = false;
-    private boolean mDisableCabTagScan = false;
+    private static boolean mDisableDongleScan = false;
+    private static boolean mDisableCabTagScan = false;
     private boolean mDiscoveryInProgress = false;
 
     public BluetoothScannerService() {
@@ -237,7 +237,7 @@ public class BluetoothScannerService extends Service {
                     }
                 }
 
-                if((mLastScanState == BL_SCANNER_STATE.SCANNING_LE || mLastScanState == BL_SCANNER_STATE.SLEEPING) && !mDisableDongleScan){
+                if(mLastScanState == BL_SCANNER_STATE.SCANNING_LE || mLastScanState == BL_SCANNER_STATE.SLEEPING){
                     if(!mDisableDongleScan)
                         startBluetoothDiscovery();
                     else
@@ -250,6 +250,7 @@ public class BluetoothScannerService extends Service {
                         Log.d(TAG, "cabTagDiscovery is Disabled");
                 }
                 else
+                    mLastScanState = BL_SCANNER_STATE.SLEEPING;
                     Log.d(TAG, "both scans are Disabled");
 
                 break;

@@ -31,9 +31,6 @@ import android.widget.Toast;
 public class MainActivity extends ActionBarActivity implements IDataServiceListener {
 
     private static final String TAG = "MainActivity";
-    private BluetoothScannerService mService;
-    private ScannerListenerReceiver rec;
-    private boolean mBound;
 
     private final IDataServiceListener activity = this;
 
@@ -80,9 +77,7 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
         }
 
 
-        // start listener
-        rec = new ScannerListenerReceiver(this);
-
+        // start data service
         Intent intent = new Intent(getBaseContext(), DataUpdateService.class);
         getBaseContext().startService(intent);
 
@@ -92,10 +87,7 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "onStart()");
-        Intent intent = new Intent(this, BluetoothScannerService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-
-        intent = new Intent(getBaseContext(), DataUpdateService.class);
+        Intent intent = new Intent(getBaseContext(), DataUpdateService.class);
         bindService(intent, mDataConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -103,14 +95,6 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
     protected void onPause() {
         super.onPause();
         Log.d(TAG, "onPause()");
-        mService.cancelScanner();
-        if(mConnection != null){
-            boolean isBound = false;
-            isBound = bindService( new Intent(getApplicationContext(), BluetoothScannerService.class), mConnection, Context.BIND_AUTO_CREATE );
-            if(isBound)
-                unbindService(mConnection);
-        }
-
         if(mDataConnection != null){
             boolean isBound = false;
             isBound = bindService( new Intent(getApplicationContext(), DataUpdateService.class), mDataConnection, Context.BIND_AUTO_CREATE );
@@ -118,8 +102,6 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
                 unbindService(mDataConnection);
         }
 
-        if(rec != null)
-            unregisterReceiver(rec);
     }
 
     @Override
@@ -132,17 +114,6 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume()");
-        if(rec != null) {
-            registerReceiver(rec, new IntentFilter(BluetoothScannerService.DONGLE_DETECTED));
-            registerReceiver(rec, new IntentFilter(BluetoothScannerService.CABTAG_DETECTED));
-        }
-
-        if(mService == null){
-            Log.d(TAG,"onResume has a null mService Reference");
-            mBound = false;
-        }
-        else
-            mService.startScanner();
     }
 
     @Override
@@ -343,28 +314,6 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
             actionBar.setSubtitle(resId);
         }
     }
-
-    /** Defines callbacks for service binding, passed to bindService() */
-    private ServiceConnection mConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName className,
-                                       IBinder service) {
-            Log.d("ServiceConnection", "BluetoothListenerService Bound");
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
-            BluetoothScannerService.LocalBinder binder = (BluetoothScannerService.LocalBinder) service;
-            mService = binder.getService();
-            mBound = true;
-            //mService.startScanner();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-
-            Log.d("ServiceConnection", "BluetoothListenerService UnBound");
-            mBound = false;
-        }
-    };
 
     private ServiceConnection mDataConnection = new ServiceConnection() {
 

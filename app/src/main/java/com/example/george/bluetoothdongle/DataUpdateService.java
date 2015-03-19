@@ -132,7 +132,7 @@ public class DataUpdateService extends Service implements LocationListener,IScan
         Log.d(TAG, "onDongleDetected");
         if(mListener != null)
             mListener.onDongleDetected(address);
-        mService.disableDongleDiscovery();
+       // mService.disableDongleDiscovery();
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         if(device != null)
            setupDongleChannel(device);
@@ -185,9 +185,13 @@ public class DataUpdateService extends Service implements LocationListener,IScan
             // we are already connected
             Log.d(TAG, "Already connected to a dongle");
 
-            if(mDongleService.getState() == DongleCommService.STATE_NONE){
-                mDongleService.connect(device ,false);
-            }
+            mDongleService.stop();
+            mDongleService = null;
+            // initialize the DongleCommService to perform a bluetooth connection
+            mDongleService = new DongleCommService(getBaseContext(), mHandler);
+            // Initialize the buffer for outgoing messages
+            mOutStringBuffer = new StringBuffer("");
+            mDongleService.connect(device, false);
 
 
         }
@@ -205,6 +209,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
         // Check that we're actually connected before trying anything
         if (mDongleService.getState() != DongleCommService.STATE_CONNECTED) {
             Log.d(TAG, "Send Failed Not Connected");
+            mService.enableDongleDiscovery();
+            mDongleService.start();
             return;
         }
 
@@ -246,6 +252,7 @@ public class DataUpdateService extends Service implements LocationListener,IScan
                         case DongleCommService.STATE_CONNECTED:
                             Log.d(TAG,"Message: State Connected");
                             //setStatus(getString(R.string.title_connected_to, mConnectedDongleName));
+                            mService.disableDongleDiscovery();
                             break;
                         case DongleCommService.STATE_CONNECTING:
                             Log.d(TAG,"Message: State Connecting");
@@ -255,10 +262,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
                         case DongleCommService.STATE_NONE:
                             Log.d(TAG,"Message: Not Connected");
                             //setStatus(R.string.title_not_connected);
-                            if(mService != null)
-                                mService.enableDongleDiscovery();
-                            else
-                                Log.e(TAG, "Discovery service NULL");
+                            mService.enableDongleDiscovery();
+                            //mDongleService.start();
                             break;
                     }
                     break;
@@ -306,6 +311,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
             mService = binder.getService();
             mBound = true;
             mService.startScanner();
+            mService.enableDongleDiscovery();
+            mService.disableCabTagDiscovery();
         }
 
         @Override
