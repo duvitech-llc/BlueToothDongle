@@ -81,7 +81,6 @@ public class DataUpdateService extends Service implements LocationListener,IScan
         return START_NOT_STICKY;
     }
 
-
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind");
@@ -169,6 +168,17 @@ public class DataUpdateService extends Service implements LocationListener,IScan
         mListener = null;
     }
 
+    public void sendDongleCommand(String command){
+        sendCommand(command);
+    }
+
+    public boolean isDongleConnectd(){
+        if(mDongleService != null && mDongleService.getState() ==  DongleCommService.STATE_CONNECTED)
+            return true;
+
+        return false;
+    }
+
     private void setupDongleChannel(BluetoothDevice device){
         Log.d(TAG, "setupDongleChannel");
         if(mDongleService != null){
@@ -188,10 +198,6 @@ public class DataUpdateService extends Service implements LocationListener,IScan
             mOutStringBuffer = new StringBuffer("");
             mDongleService.connect(device, false);
         }
-    }
-
-    public void sendDongleCommand(String command){
-        sendCommand(command);
     }
 
 
@@ -232,6 +238,10 @@ public class DataUpdateService extends Service implements LocationListener,IScan
             switch (msg.what) {
                 case Constants.MESSAGE_STATE_CHANGE:
                     Log.d(TAG,"Message: MESSAGE_STATE_CHANGE");
+
+                    if(mListener != null)
+                        mListener.onDongleStateChange(msg.arg1);
+
                     switch (msg.arg1) {
                         case DongleCommService.STATE_CONNECTED:
                             Log.d(TAG,"Message: State Connected");
@@ -245,6 +255,10 @@ public class DataUpdateService extends Service implements LocationListener,IScan
                         case DongleCommService.STATE_NONE:
                             Log.d(TAG,"Message: Not Connected");
                             //setStatus(R.string.title_not_connected);
+                            if(mService != null)
+                                mService.enableDongleDiscovery();
+                            else
+                                Log.e(TAG, "Discovery service NULL");
                             break;
                     }
                     break;
@@ -256,7 +270,7 @@ public class DataUpdateService extends Service implements LocationListener,IScan
                     if(writeMessage.endsWith("\r"))
                         writeMessage = writeMessage.substring(0, writeMessage.length()-1);
 
-                    Log.d(TAG,"Message: " + writeMessage);
+                    //Log.d(TAG,"Message: " + writeMessage);
                     break;
                 case Constants.MESSAGE_READ:
                     Log.d(TAG,"Message: MESSAGE_READ");
@@ -265,7 +279,7 @@ public class DataUpdateService extends Service implements LocationListener,IScan
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     if(mListener != null)
                         mListener.onDongleResponse(readMessage);
-                    Log.d(TAG,"Message: " + readMessage);
+                    //Log.d(TAG,"Message: " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
                     Log.d(TAG,"Message: MESSAGE_DEVICE_NAME");

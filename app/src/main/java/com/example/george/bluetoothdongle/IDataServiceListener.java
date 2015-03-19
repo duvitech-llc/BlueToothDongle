@@ -9,4 +9,6 @@ public interface IDataServiceListener extends IScannedDeviceListener {
 
     public void onLocationUpdated(Location location);
     public void onDongleResponse(String Message);
+    public void onDongleStateChange(int dongleState);
+
 }

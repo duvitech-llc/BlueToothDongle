@@ -182,6 +182,7 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
     @Override
     public void onLocationUpdated(Location location) {
 
+
     }
 
     @Override
@@ -189,9 +190,32 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
         Log.d(TAG,"Dongle Response: " + message);
     }
 
+    @Override
+    public void onDongleStateChange(int dongleState) {
+        PlaceholderFragment frag = (PlaceholderFragment)
+                getSupportFragmentManager().findFragmentById(R.id.container);
+
+        switch (dongleState){
+            case DongleCommService.STATE_NONE:
+            case DongleCommService.STATE_CONNECTING:
+            case DongleCommService.STATE_LISTEN:
+                frag.updateStatus("Not Connected");
+                break;
+            case DongleCommService.STATE_CONNECTED:
+                frag.updateStatus("Connected");
+                break;
+            default:
+                frag.updateStatus("Unknown");
+                break;
+        }
+    }
+
     public void sendDongleCommand(String command){
         if(mDataService != null)
-            mDataService.sendDongleCommand(command);
+            if(mDataService.isDongleConnectd())
+                mDataService.sendDongleCommand(command);
+            else
+                Log.i(TAG, "No Dongle connected");
         else
             Log.i(TAG, "Dataservice not available");
     }
@@ -199,7 +223,7 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class PlaceholderFragment extends Fragment {
+    public static class PlaceholderFragment extends Fragment{
         private static String FTAG = "PlaceholderFragment";
         /**
          * Name of the connected dongle
@@ -274,6 +298,11 @@ public class MainActivity extends ActionBarActivity implements IDataServiceListe
         public void onAttach(Activity activity) {
             super.onAttach(activity);
 
+        }
+
+
+        public void updateStatus(String status){
+            tvStatus.setText(status);
         }
 
         /**
