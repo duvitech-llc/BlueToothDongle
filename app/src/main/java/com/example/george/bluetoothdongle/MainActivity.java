@@ -1,6 +1,7 @@
 package com.example.george.bluetoothdongle;
 
 import android.app.ActionBar;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
@@ -8,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.location.Location;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -21,16 +23,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
-public class MainActivity extends ActionBarActivity implements IScannedDeviceListener {
+public class MainActivity extends ActionBarActivity implements IDataServiceListener {
 
     private static final String TAG = "MainActivity";
     private BluetoothScannerService mService;
     private ScannerListenerReceiver rec;
     private boolean mBound;
+
+    private final IDataServiceListener activity = this;
+
+    private DataUpdateService mDataService;
+    private boolean mDataServiceBound;
 
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
@@ -71,11 +79,13 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
             finish();
         }
 
+
         // start listener
         rec = new ScannerListenerReceiver(this);
 
         Intent intent = new Intent(getBaseContext(), DataUpdateService.class);
         getBaseContext().startService(intent);
+
     }
 
     @Override
@@ -84,6 +94,9 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
         Log.d(TAG, "onStart()");
         Intent intent = new Intent(this, BluetoothScannerService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
+        intent = new Intent(getBaseContext(), DataUpdateService.class);
+        bindService(intent, mDataConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -96,6 +109,13 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
             isBound = bindService( new Intent(getApplicationContext(), BluetoothScannerService.class), mConnection, Context.BIND_AUTO_CREATE );
             if(isBound)
                 unbindService(mConnection);
+        }
+
+        if(mDataConnection != null){
+            boolean isBound = false;
+            isBound = bindService( new Intent(getApplicationContext(), DataUpdateService.class), mDataConnection, Context.BIND_AUTO_CREATE );
+            if(isBound)
+                unbindService(mDataConnection);
         }
 
         if(rec != null)
@@ -150,38 +170,30 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
     @Override
     public void onDongleDetected(String address) {
         Log.d(TAG, "onDongleDetected");
-//        mService.disableDongleDiscovery();
-
-        // Dongle in range
-//        PlaceholderFragment fragment = (PlaceholderFragment)getSupportFragmentManager().findFragmentById(R.id.container);
-//        if(fragment != null) {
-//            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-//            if(device != null)
-//                fragment.setupDongleChannel(device);
-//            else
-//                Log.w(TAG,"Dongle Name NOT FOUND");
-//        }
-//        else
-//            Log.d(TAG,"Fragment is NULL");
-
+        Toast.makeText(getBaseContext(), "Dongle Detected.", Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onCabTagDetected(String address) {
         Log.d(TAG,"onCabTagDetected");
-//        mService.disableCabTagDiscovery();
-//       // mService.cancelScanner();
-//        // cabtag in range
-//        PlaceholderFragment fragment = (PlaceholderFragment)getSupportFragmentManager().findFragmentById(R.id.container);
-//        if(fragment != null) {
-//            BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-//            if(device != null)
-//                fragment.setupCabTagChannel(device);
-//            else
-//                Log.w(TAG,"Dongle Name NOT FOUND");
-//        }
-//        else
-//            Log.d(TAG,"Fragment is NULL");
+        Toast.makeText(getBaseContext(), "CabTag Detected.", Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onLocationUpdated(Location location) {
+
+    }
+
+    @Override
+    public void onDongleResponse(String message) {
+        Log.d(TAG,"Dongle Response: " + message);
+    }
+
+    public void sendDongleCommand(String command){
+        if(mDataService != null)
+            mDataService.sendDongleCommand(command);
+        else
+            Log.i(TAG, "Dataservice not available");
     }
 
     /**
@@ -210,35 +222,8 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
         public PlaceholderFragment() {
         }
 
-//        public void setupDongleChannel(BluetoothDevice device){
-//            Log.d(FTAG, "setupDongleChannel");
-//            if(mDongleService != null){
-//                // we are already connected
-//                Log.d(FTAG, "Already connected to a dongle");
-//
-//                if(mDongleService.getState() == DongleCommService.STATE_NONE){
-//                    mDongleService.connect(device ,false);
-//                }
-//            }
-//            else {
-//                // initialize the DongleCommService to perform a bluetooth connection
-//                mDongleService = new DongleCommService(getActivity(), mHandler);
-//                // Initialize the buffer for outgoing messages
-//                mOutStringBuffer = new StringBuffer("");
-//                mDongleService.connect(device, false);
-//            }
-//        }
-
-
         public void setupCabTagChannel(BluetoothDevice device){
             Log.d(FTAG, "setupCabTagChannel");
-//            if(mCabTagService != null){
-//                // we are already connected
-//                Log.d(FTAG, "Already connected to a CabTag");
-//            }
-//            else {
-//
-//            }
 
         }
 
@@ -247,6 +232,16 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
             tvStatus = (TextView)rootView.findViewById(R.id.tv_status);
+
+            Button btnSendCommand = (Button)rootView.findViewById(R.id.btnSend);
+            btnSendCommand.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    MainActivity temp = (MainActivity)getActivity();
+                    temp.sendDongleCommand("0105");
+                }
+            });
+
             return rootView;
         }
 
@@ -254,11 +249,6 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
         public void onResume() {
             super.onResume();
             Log.d(FTAG,"onResume()");
-//            if(mDongleService != null){
-//                if(mDongleService.getState() == DongleCommService.STATE_NONE){
-//                    mDongleService.start();
-//                }
-//            }
         }
 
         @Override
@@ -280,28 +270,12 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
             Log.d(FTAG, "onDestroy()");
         }
 
-//        private void sendCommand(String dongleCommand){
-//        // Check that we're actually connected before trying anything
-//            if (mDongleService.getState() != DongleCommService.STATE_CONNECTED) {
-//                Toast.makeText(getActivity(), R.string.not_connected, Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//
-//            // Check that there's actually something to send
-//            if (dongleCommand.length() > 0) {
-//                if(!dongleCommand.endsWith("\r"))
-//                    dongleCommand = dongleCommand + "\r";
-//
-//                // Get the message bytes and tell the BluetoothChatService to write
-//                byte[] send = dongleCommand.getBytes();
-//                mDongleService.write(send);
-//
-//                // Reset out string buffer to zero
-//                mOutStringBuffer.setLength(0);
-//                // and clear the edit text field
-//                //mOutEditText.setText(mOutStringBuffer);
-//            }
-//        }
+        @Override
+        public void onAttach(Activity activity) {
+            super.onAttach(activity);
+
+        }
+
         /**
          * Updates the status on the action bar.
          *
@@ -339,64 +313,6 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
             }
             actionBar.setSubtitle(resId);
         }
-
-//        private final Handler mHandler = new Handler(){
-//
-//            @Override
-//            public void handleMessage(Message msg) {
-//                FragmentActivity activity = getActivity();
-//                Log.d(FTAG,"Message Received");
-//
-//                switch (msg.what) {
-//                    case Constants.MESSAGE_STATE_CHANGE:
-//                        Log.d(FTAG,"Message: MESSAGE_STATE_CHANGE");
-//                        switch (msg.arg1) {
-//                            case DongleCommService.STATE_CONNECTED:
-//                                setStatus(getString(R.string.title_connected_to, mConnectedDongleName));
-//                                break;
-//                            case DongleCommService.STATE_CONNECTING:
-//                                setStatus(R.string.title_connecting);
-//                                break;
-//                            case DongleCommService.STATE_LISTEN:
-//                            case DongleCommService.STATE_NONE:
-//                                setStatus(R.string.title_not_connected);
-//                                break;
-//                        }
-//                        break;
-//                    case Constants.MESSAGE_WRITE:
-//                        Log.d(FTAG,"Message: MESSAGE_WRITE");
-//                        byte[] writeBuf = (byte[]) msg.obj;
-//                        // construct a string from the buffer
-//                        String writeMessage = new String(writeBuf);
-//                        if(writeMessage.endsWith("\r"))
-//                            writeMessage = writeMessage.substring(0, writeMessage.length()-1);
-//                        Toast.makeText(activity,"Sent: " + writeMessage,
-//                                Toast.LENGTH_SHORT).show();
-//                        break;
-//                    case Constants.MESSAGE_READ:
-//                        Log.d(FTAG,"Message: MESSAGE_READ");
-//                        byte[] readBuf = (byte[]) msg.obj;
-//                        // construct a string from the valid bytes in the buffer
-//                        String readMessage = new String(readBuf, 0, msg.arg1);
-//
-//                        Toast.makeText(activity,mConnectedDongleName + ": " + readMessage,
-//                                Toast.LENGTH_SHORT).show();
-//                        break;
-//                    case Constants.MESSAGE_DEVICE_NAME:
-//                        Log.d(FTAG,"Message: MESSAGE_DEVICE_NAME");
-//                        // save the connected device's name
-//                        mConnectedDongleName = msg.getData().getString(Constants.DEVICE_NAME);
-//                        Toast.makeText(activity, "Connected to "
-//                                + mConnectedDongleName, Toast.LENGTH_SHORT).show();
-//                        break;
-//                    case Constants.MESSAGE_TOAST:
-//                        Log.d(FTAG,"Message: MESSAGE_TOAST");
-//                        Toast.makeText(activity, msg.getData().getString(Constants.TOAST),
-//                                Toast.LENGTH_SHORT).show();
-//                        break;
-//                }
-//            }
-//        };
     }
 
     /** Defines callbacks for service binding, passed to bindService() */
@@ -405,6 +321,7 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
+            Log.d("ServiceConnection", "BluetoothListenerService Bound");
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothScannerService.LocalBinder binder = (BluetoothScannerService.LocalBinder) service;
             mService = binder.getService();
@@ -414,10 +331,33 @@ public class MainActivity extends ActionBarActivity implements IScannedDeviceLis
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
+
+            Log.d("ServiceConnection", "BluetoothListenerService UnBound");
             mBound = false;
         }
     };
 
+    private ServiceConnection mDataConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            Log.d("ServiceConnection", "DataUpdateService Bound");
+            DataUpdateService.LocalBinder binder = (DataUpdateService.LocalBinder) iBinder;
+            mDataService = binder.getService();
+            mDataServiceBound = true;
+
+            mDataService.RegisterListener(activity);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            Log.d("ServiceConnection", "DataUpdateService UnBound");
+
+            mDataService.UnregisterListener(activity);
+            mDataServiceBound = false;
+
+        }
+    };
 
 
 }

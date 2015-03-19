@@ -11,6 +11,7 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -26,6 +27,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
     private static final int UPDATE_INTERVAL = 20000;
     private static final int UPDATE_DISTANCE = 1;
 
+    // Binder given to clients
+    private final IBinder mBinder = new LocalBinder();
     private boolean mBound = false;
     private BluetoothScannerService mService;
     private ScannerListenerReceiver receiver;
@@ -33,6 +36,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
     private static String mConnectedDongleName = null;
     private DongleCommService mDongleService = null;
     private StringBuffer mOutStringBuffer;
+
+    private IDataServiceListener mListener = null;
 
     boolean mDonglePresent = false;
     String mDongleAddress = null;
@@ -80,8 +85,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind");
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
+        mBound = true;
+        return mBinder;
     }
 
     @Override
@@ -101,6 +106,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
     public void onLocationChanged(Location location) {
         Log.d(TAG, "onLocationChanged");
         Log.d(TAG, "Position: " + location.getLatitude() + ", " + location.getLongitude());
+        if(mListener != null)
+            mListener.onLocationUpdated(location);
     }
 
     @Override
@@ -124,6 +131,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
     @Override
     public void onDongleDetected(String address) {
         Log.d(TAG, "onDongleDetected");
+        if(mListener != null)
+            mListener.onDongleDetected(address);
         mService.disableDongleDiscovery();
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         if(device != null)
@@ -135,10 +144,32 @@ public class DataUpdateService extends Service implements LocationListener,IScan
     @Override
     public void onCabTagDetected(String address) {
         Log.d(TAG, "onCabTagDetected");
-
+        if(mListener != null)
+            mListener.onCabTagDetected(address);
     }
 
-    public void setupDongleChannel(BluetoothDevice device){
+    /**
+     * Class used for the client Binder.  Because we know this service always
+     * runs in the same process as its clients, we don't need to deal with IPC.
+     */
+    public class LocalBinder extends Binder {
+        DataUpdateService getService() {
+            // Return this instance of LocalService so clients can call public methods
+            return DataUpdateService.this;
+        }
+    }
+
+    // Pubolic Binding methods
+
+    public void RegisterListener(IDataServiceListener listener) {
+        mListener = listener;
+    }
+
+    public void UnregisterListener(IDataServiceListener listener) {
+        mListener = null;
+    }
+
+    private void setupDongleChannel(BluetoothDevice device){
         Log.d(TAG, "setupDongleChannel");
         if(mDongleService != null){
             // we are already connected
@@ -158,6 +189,11 @@ public class DataUpdateService extends Service implements LocationListener,IScan
             mDongleService.connect(device, false);
         }
     }
+
+    public void sendDongleCommand(String command){
+        sendCommand(command);
+    }
+
 
     private void sendCommand(String dongleCommand){
         // Check that we're actually connected before trying anything
@@ -198,13 +234,16 @@ public class DataUpdateService extends Service implements LocationListener,IScan
                     Log.d(TAG,"Message: MESSAGE_STATE_CHANGE");
                     switch (msg.arg1) {
                         case DongleCommService.STATE_CONNECTED:
+                            Log.d(TAG,"Message: State Connected");
                             //setStatus(getString(R.string.title_connected_to, mConnectedDongleName));
                             break;
                         case DongleCommService.STATE_CONNECTING:
+                            Log.d(TAG,"Message: State Connecting");
                             //setStatus(R.string.title_connecting);
                             break;
                         case DongleCommService.STATE_LISTEN:
                         case DongleCommService.STATE_NONE:
+                            Log.d(TAG,"Message: Not Connected");
                             //setStatus(R.string.title_not_connected);
                             break;
                     }
@@ -224,7 +263,8 @@ public class DataUpdateService extends Service implements LocationListener,IScan
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-
+                    if(mListener != null)
+                        mListener.onDongleResponse(readMessage);
                     Log.d(TAG,"Message: " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:

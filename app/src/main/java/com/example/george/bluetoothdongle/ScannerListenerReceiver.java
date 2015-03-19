@@ -27,14 +27,12 @@ public class ScannerListenerReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if(action.equals(BluetoothScannerService.DONGLE_DETECTED)) {
             String sBluetoothAddress = intent.getExtras().getString("BT_ADDRESS");
-            Toast.makeText(context, "Dongle Detected.", Toast.LENGTH_LONG).show();
             if(mHandle != null)
                 mHandle.onDongleDetected(sBluetoothAddress);
             else
                 Log.d(TAG, "Handle is null");
         }else if(action.equals(BluetoothScannerService.CABTAG_DETECTED)){
             String sBluetoothAddress = intent.getExtras().getString("BT_ADDRESS");
-            Toast.makeText(context, "CabTag Detected.", Toast.LENGTH_LONG).show();
             if(mHandle != null)
                 mHandle.onCabTagDetected(sBluetoothAddress);
             else

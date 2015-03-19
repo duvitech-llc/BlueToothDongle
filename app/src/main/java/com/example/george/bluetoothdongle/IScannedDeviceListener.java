@@ -1,5 +1,7 @@
 package com.example.george.bluetoothdongle;
 
+import android.location.Location;
+
 /**
  * Created by George on 3/18/2015.
  */
