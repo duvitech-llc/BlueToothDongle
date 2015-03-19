@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -19,6 +20,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <service
             android:name=".BluetoothScannerService"
             android:enabled="true"
@@ -26,6 +28,11 @@
         </service>
         <service
             android:name=".CabTagCommService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
+        <service
+            android:name=".DataUpdateService"
             android:enabled="true"
             android:exported="false" >
         </service>

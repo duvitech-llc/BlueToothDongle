@@ -9,13 +9,13 @@ import android.widget.Toast;
 public class ScannerListenerReceiver extends BroadcastReceiver {
     private static final String TAG = "DongleListenerReceiver";
 
-    static IScannedDevices mHandle;
+    static IScannedDeviceListener mHandle;
 
     public ScannerListenerReceiver() {
         mHandle = null;
     }
 
-    public ScannerListenerReceiver(IScannedDevices handle){
+    public ScannerListenerReceiver(IScannedDeviceListener handle){
         mHandle = handle;
     }
 
